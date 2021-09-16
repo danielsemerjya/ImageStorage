@@ -5,6 +5,8 @@ import os
 from django.db import models
 from django.core.files.base import ContentFile
 from PIL import Image
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class AccountTier(models.Model):
@@ -37,6 +39,13 @@ class UserTier(models.Model):
 
     def __str__(self):
         return f"{self.user.username}: {self.account_tier}"
+
+
+@receiver(post_save, sender=User)
+def create_tier(sender, instance, created, **kwargs):
+    if created:
+        tier = AccountTier.objects.get(name="Basic")
+        UserTier.objects.create(user=instance, account_tier=tier)
 
 
 class Photo(models.Model):
