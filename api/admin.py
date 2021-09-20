@@ -1,8 +1,5 @@
 from django.contrib import admin
-
-# Register your models here.
-
-from .models import AccountTier, Photo, TierSetting, UserTier, Thumbnail
+from .models import AccountTier, Photo, TierPhotoSetting, UserTier, Thumbnail, ExpiringLink
 
 
 class UserTierAdmin(admin.ModelAdmin):
@@ -18,16 +15,21 @@ class ThumbnailAdmin(admin.ModelAdmin):
 
 
 class AccountTierAdmin(admin.ModelAdmin):
-    fields = ["name"]
+    fields = ["name", "expiring_links", "original_photos"]
 
 
-class TierSettingAdmin(admin.ModelAdmin):
+class TierPhotoSettingAdmin(admin.ModelAdmin):
     fields = ["tier", "img_size"]
+
+
+class ExpiringLinkSettingAdmin(admin.ModelAdmin):
+    fields = ["photo", "expiration_date"]
 
 
 admin.site.register(UserTier, UserTierAdmin)
 admin.site.register(Photo, PhotoAdmin)
 admin.site.register(Thumbnail, ThumbnailAdmin)
 admin.site.register(AccountTier, AccountTierAdmin)
-admin.site.register(TierSetting, TierSettingAdmin)
+admin.site.register(TierPhotoSetting, TierPhotoSettingAdmin)
+admin.site.register(ExpiringLink, ExpiringLinkSettingAdmin)
 

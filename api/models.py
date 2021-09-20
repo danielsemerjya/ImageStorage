@@ -1,12 +1,15 @@
-from django.db import models
 from django.contrib.auth.models import User
 from io import BytesIO
 import os
 from django.db import models
 from django.core.files.base import ContentFile
 from PIL import Image
+from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from rest_framework.authtoken.models import Token
+import string
+import random
 
 
 class AccountTier(models.Model):
@@ -14,12 +17,14 @@ class AccountTier(models.Model):
     Model storing all available Tiers
     """
     name = models.CharField(max_length=20, null=False, blank=False, unique=True)
+    expiring_links = models.BooleanField(default=False)
+    original_photos = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
 
 
-class TierSetting(models.Model):
+class TierPhotoSetting(models.Model):
     """
     Model storing thumbnail img_sizes available for every Tier
     """
@@ -51,7 +56,7 @@ def create_tier(sender, instance, created, **kwargs):
 class Photo(models.Model):
 
     """
-    Photo model with automatically generated Thumbnail by TierSetting of UserTier
+    Photo model with automatically generated Thumbnail by TierPhotoSetting of UserTier
     """
     user = models.ForeignKey(User, blank=False, null=False, on_delete=models.CASCADE)
     photo = models.ImageField(upload_to='photos', blank=False, null=False)
@@ -65,10 +70,9 @@ class Photo(models.Model):
             raise Exception('Could not create thumbnail - is the file type valid?')
 
     def make_thumbnail(self):
-
         # Get user settings
         user_tier = UserTier.objects.get(user=self.user)
-        setting = TierSetting.objects.filter(tier=user_tier.account_tier)
+        setting = TierPhotoSetting.objects.filter(tier=user_tier.account_tier)
 
         for size in setting:
 
@@ -110,3 +114,23 @@ class Thumbnail(models.Model):
     size = models.PositiveSmallIntegerField(blank=False, null=False, editable=False)
     thumbnail = models.ImageField(upload_to='thumbs', blank=False, null=False)
 
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)
+
+
+def generate_unique_code():
+    length=15
+    while True:
+        code = ''.join(random.choices(string.ascii_uppercase, k=length))
+        if not ExpiringLink.objects.filter(code=code).exists():
+            break
+    return code
+
+
+class ExpiringLink(models.Model):
+    photo = models.ForeignKey(Photo, on_delete=models.CASCADE, null=False, blank=False)
+    expiration_date = models.DateTimeField(null=False, blank=False)
+    code = models.CharField(max_length=15, default=generate_unique_code, unique=True)
