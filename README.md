@@ -9,10 +9,8 @@ Download source code from 'devlop' branch
 To run project localy user should have Docker installed.
 Next in project directory run command : docker-compose up --build
 
-## Testing on locally project
+## Testing locally
 
 To run tests - run Django container (desciption in 'Run project locally'), log to container and type 'python manage.py test api'
 
 Remember to dont change settings file. .dev_settings should be active.
-
-## Time for complite task - 5 afternoons
